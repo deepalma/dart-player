@@ -1,39 +1,29 @@
 const electron = require('electron')
-// Module to control application life.
 const app = electron.app
-// Module to create native browser window.
 const BrowserWindow = electron.BrowserWindow
-
-const path = require('path')
-const url = require('url')
+const spawn = require('child_process').spawn
+const ffmpeg = require('fluent-ffmpeg')
+const fs = require('fs')
+const userData = app.getPath('userData')
+const path = require('path');
+const url = require('url');
+const extract = require('extract-zip');
 
 // Keep a global reference of the window object, if you don't, the window will
 // be closed automatically when the JavaScript object is garbage collected.
 let mainWindow
-
 function createWindow () {
-  // Create the browser window.
   mainWindow = new BrowserWindow({width: 800, height: 600})
-
-  // and load the index.html of the app.
   const startUrl = process.env.ELECTRON_START_URL || url.format({
     pathname: path.join(__dirname, '/../build/index.html'),
     protocol: 'file:',
-    slashes: true
+    slashes: true,
   });
-
   mainWindow.loadURL(startUrl);
-
-  // Open the DevTools.
-  mainWindow.webContents.openDevTools()
-
-  // Emitted when the window is closed.
+  // mainWindow.webContents.openDevTools();
   mainWindow.on('closed', function () {
-    // Dereference the window object, usually you would store windows
-    // in an array if your app supports multi windows, this is the time
-    // when you should delete the corresponding element.
-    mainWindow = null
-  })
+    mainWindow = null;
+  });
 }
 
 // This method will be called when Electron has finished
@@ -46,6 +36,7 @@ app.on('window-all-closed', function () {
   // On OS X it is common for applications and their menu bar
   // to stay active until the user quits explicitly with Cmd + Q
   if (process.platform !== 'darwin') {
+    app.stop()
     app.quit()
   }
 })
@@ -58,5 +49,12 @@ app.on('activate', function () {
   }
 })
 
-// In this file you can include the rest of your app's specific main process
-// code. You can also put them in separate files and require them here.
+app.initPlayer = (file) => {
+  return spawn(`${userData}/ffmpeg/ffplay`, [file.path, '-nodisp', '-autoexit'], {stdio: 'ignore'});
+}
+
+if (!fs.existsSync(`${userData}/joe.txt`)) {
+  extract(__dirname + '/../ffmpeg.zip', {dir: userData}, function (err) {
+   fs.writeFile(`${userData}/joe.txt`, 'Joe')
+  })
+}
